@@ -8,6 +8,16 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 8000 ;
 
+// Middleware configuration
+app.use(express.json());
+app.use(express.urlencoded({extended: false}));
+app.use(bodyParser.json());
+
+// Route configuration
+app.get('/', (req, res) =>{
+    res.send("Welcome Home!");
+})
+
 app.listen(PORT,()=>{
     console.log('Server is up and running on port '+PORT);
 })
