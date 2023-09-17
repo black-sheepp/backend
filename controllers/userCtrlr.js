@@ -16,22 +16,30 @@ module.exports.registerUser = asyncHnadler(async (req, res) => {
 
 	const userExists = await User.findOne({ email });
 
-    if(userExists){
-        res.status(400);
+	if (userExists) {
+		res.status(400);
 		throw new Error("Email already exists");
-    }
+	}
 
-    // creaet new user
-    const user = await User.create({ name: name, email: email, password: password});
+	// creaet new user
+	const user = await User.create({
+		name: name,
+		email: email,
+		password: password,
+	});
 
-    if(user){
-
-        const {_id, name, email, photo, phone, bio} = user;
-        res.status(201).json({
-            _id, name, email, photo, phone, bio
-        });
-    }else{
-        res.status(400);
-        throw new Error("Invalid user data");
-    }
+	if (user) {
+		const { _id, name, email, photo, phone, bio } = user;
+		res.status(201).json({
+			_id,
+			name,
+			email,
+			photo,
+			phone,
+			bio,
+		});
+	} else {
+		res.status(400);
+		throw new Error("Invalid user data");
+	}
 });
