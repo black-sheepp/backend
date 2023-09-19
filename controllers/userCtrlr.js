@@ -107,13 +107,13 @@ module.exports.loginUser = asyncHnadler(async function (req, res) {
 			bio,
 			token,
 		});
-	}else{
+	} else {
 		res.status(400);
 		throw new Error("Invalid user data");
 	}
 });
 
-module.exports.logoutUser = asyncHnadler(async function(req,res){
+module.exports.logoutUser = asyncHnadler(async function (req, res) {
 	// delete httpOnly cookies
 	res.cookie("token", "", {
 		path: "/",
@@ -125,4 +125,94 @@ module.exports.logoutUser = asyncHnadler(async function(req,res){
 	return res.status(200).json({
 		message: "User logged out successfully",
 	});
+});
+
+module.exports.getUser = asyncHnadler(async function (req, res) {
+	const user = await User.findById(req.user.id);
+
+	if (user) {
+		const { _id, name, email, photo, phone, bio } = user;
+		res.status(200).json({
+			_id,
+			name,
+			email,
+			photo,
+			phone,
+			bio,
+		});
+	} else {
+		res.status(400);
+		throw new Error("User not found");
+	}
+});
+
+module.exports.session = asyncHnadler(async function (req, res) {
+	const token = req.cookies.token;
+	if (!token) {
+		res.json(false);
+	}
+
+	// verify token
+	const verified = jwt.verify(token, process.env.JWT_SECRET);
+
+	if (verified) {
+		res.json(true);
+	}
+	res.json(false);
+});
+
+module.exports.updateUser = asyncHnadler(async function (req, res) {
+	const user = await User.findById(req.user._id);
+
+	if (user) {
+		const { name, email, photo, phone, bio } = user;
+		user.email = email;
+		user.name = req.body.name || name;
+		user.phone = req.body.phone || phone;
+		user.bio = req.body.bio || bio;
+		user.photo = req.body.photo || photo;
+
+		const updatedUser = await user.save();
+
+		res.status(200).json({
+			name: updatedUser.name,
+			email: updatedUser.email,
+			photo: updatedUser.photo,
+			phone: updatedUser.phone,
+			bio: updatedUser.bio,
+		});
+	}else{
+		res.status(404);
+		throw new Error("User not found");
+	}
+});
+
+
+module.exports.changePassword = asyncHnadler(async function(req,res){
+	const user = await User.findById(req.user._id);
+	const {oldPassword,password} = req.body;
+
+	if(!user){
+		res.status(404);
+		throw new Error("User not found, pleease signup");
+	}
+
+	// validate passwords
+	if(!oldPassword || !password){
+		res.status(404);
+		throw new Error("Please add old and new password");
+	}
+
+	// check if old password matches password in db
+	const passwordIsCorrect = await bcrypt.compare(oldPassword, user.password);
+
+	// save new password
+	if(user && passwordIsCorrect) {
+		user.password = password;
+		await user.save();
+		res.status(200).send({message: 'Password changed successfully'});
+	}else{
+		res.status(404);
+		throw new Error("Old password is incorrect");
+	}
 })
